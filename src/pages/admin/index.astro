@@ -1,0 +1,39 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { getSessionUser } from "../../lib/auth.ts";
+
+let user = null;
+try {
+	user = await getSessionUser(Astro);
+} catch {
+	user = null;
+}
+if (user?.role !== "admin") return Astro.redirect("/login");
+---
+
+<AdminLayout title="Admin">
+	<h1 class="admin-title">Dashboard</h1>
+	<nav class="admin-nav" aria-label="Admin sections">
+		<a href="/admin/posts">Posts</a>
+		<a href="/admin/comments">Comments</a>
+	</nav>
+</AdminLayout>
+
+<style>
+	.admin-title {
+		font: var(--m3e-type-title-large);
+		margin: 0 0 1rem;
+	}
+	.admin-nav {
+		display: flex;
+		gap: 1rem;
+	}
+	.admin-nav a {
+		background: var(--surface-container-highest);
+		border-radius: var(--shape-corner-m);
+		color: var(--primary);
+		font: var(--m3e-type-label-large);
+		padding: 0.75rem 1.25rem;
+		text-decoration: none;
+	}
+</style>

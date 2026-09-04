@@ -1,0 +1,25 @@
+---
+import CommentModeration from "../../components/organisms/admin/CommentModeration.svelte";
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { requireAdmin } from "../../lib/auth.ts";
+
+let admin = null;
+try {
+	admin = await requireAdmin(Astro);
+} catch {
+	admin = null;
+}
+if (!admin) return Astro.redirect("/login");
+---
+
+<AdminLayout title="Admin · Comments">
+	<h1 class="admin-title">Comments</h1>
+	<CommentModeration client:load />
+</AdminLayout>
+
+<style>
+	.admin-title {
+		font: var(--m3e-type-title-large);
+		margin: 0 0 1rem;
+	}
+</style>

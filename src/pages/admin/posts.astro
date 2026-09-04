@@ -1,0 +1,66 @@
+---
+import PostEditor from "../../components/organisms/admin/PostEditor.svelte";
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { requireAdmin } from "../../lib/auth.ts";
+import { listPublished } from "../../lib/posts.ts";
+
+let admin = null;
+try {
+	admin = await requireAdmin(Astro);
+} catch {
+	admin = null;
+}
+if (!admin) return Astro.redirect("/login");
+
+let posts: { slug: string; title: string; status: string }[] = [];
+let total = 0;
+try {
+	const result = await listPublished(1, 50);
+	posts = result.posts;
+	total = result.total;
+} catch {
+	posts = [];
+	total = 0;
+}
+---
+
+<AdminLayout title="Admin · Posts">
+	<h1 class="admin-title">Posts</h1>
+	<p class="admin-meta" role="status">{total} published</p>
+	<PostEditor client:load />
+	<ul class="admin-list">
+		{posts.map((post) => (
+			<li>
+				<span>{post.title}</span>
+				<code>{post.slug}</code>
+			</li>
+		))}
+	</ul>
+</AdminLayout>
+
+<style>
+	.admin-title {
+		font: var(--m3e-type-title-large);
+		margin: 0 0 0.5rem;
+	}
+	.admin-meta {
+		color: var(--on-surface);
+		font: var(--m3e-type-body-small);
+		margin: 0 0 1.5rem;
+	}
+	.admin-list {
+		display: grid;
+		gap: 0.5rem;
+		list-style: none;
+		margin: 1.5rem 0 0;
+		padding: 0;
+	}
+	.admin-list li {
+		background: var(--surface-container);
+		border-radius: var(--shape-corner-s);
+		display: flex;
+		gap: 0.75rem;
+		justify-content: space-between;
+		padding: 0.625rem 0.875rem;
+	}
+</style>
