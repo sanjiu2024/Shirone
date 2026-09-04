@@ -1,0 +1,43 @@
+---
+// Static login route — wins over the universal [...permalink] rest route, so
+// OAuth/admin redirects to /login (and /login?err=oauth) resolve here instead
+// of falling through to the 404 branch of the permalink resolver.
+import Card from "@components/atoms/display/Card.svelte";
+import GithubLoginButton from "@components/organisms/auth/GithubLoginButton.svelte";
+import I18nKey from "../i18n/i18nKey";
+import { i18n } from "../i18n/translation";
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+
+const title = i18n(I18nKey.authLoginWithGithub);
+const isOAuthError = Astro.url.searchParams.get("err") === "oauth";
+---
+
+<MainGridLayout title={title} description={title} page="about">
+	<div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative min-h-32">
+		<Card color="var(--card-bg)" radius="l" class="z-10 px-9 py-6 relative w-full">
+			<div class="mx-auto flex max-w-md flex-col items-center gap-4 py-6 text-center onload-animation">
+				<h1 class="text-2xl font-bold text-[var(--on-surface)]" style="font: var(--m3e-type-headline-small)">
+					{title}
+				</h1>
+				{isOAuthError && (
+					<p
+						role="alert"
+						data-login-error="oauth"
+						class="w-full rounded-[var(--shape-corner-m)] border border-[var(--error)] bg-[var(--error-container)] px-4 py-2 text-sm text-[var(--on-error-container)]"
+					>
+						{i18n(I18nKey.retry)} — {i18n(I18nKey.authLoginWithGithub)}
+					</p>
+				)}
+				<GithubLoginButton client:load />
+				<noscript>
+					<a
+						href="/api/auth/github"
+						class="rounded-[var(--shape-corner-m)] bg-[var(--surface-container-high)] px-4 py-2 text-[var(--on-surface)]"
+					>
+						{title}
+					</a>
+				</noscript>
+			</div>
+		</Card>
+	</div>
+</MainGridLayout>
