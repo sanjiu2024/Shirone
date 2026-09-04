@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { basename, extname } from "node:path";
 import { fileURLToPath } from "node:url";
 import mdx from "@astrojs/mdx";
+import node from "@astrojs/node";
 import sitemap from "@astrojs/sitemap";
 import svelte from "@astrojs/svelte";
 import { pluginCollapsibleSections } from "@expressive-code/plugin-collapsible-sections";
@@ -153,6 +154,8 @@ const configuredFonts =
 export default defineConfig({
 	site: siteConfig.site,
 	base: siteConfig.base ?? "/",
+	output: "server",
+	adapter: node({ mode: "standalone" }),
 	trailingSlash: "always",
 	fonts: configuredFonts,
 	integrations: [
