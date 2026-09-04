@@ -11,10 +11,20 @@ import PageHeader from "@components/atoms/display/PageHeader.astro";
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
-import { getTagList } from "@utils/content-utils";
 import { getTagUrl } from "@utils/url-utils";
+import { listPublished } from "../lib/posts.ts";
 
-const tags = await getTagList();
+const { posts: publishedPosts } = await listPublished(1, 10000);
+
+const tagCounts: Record<string, number> = {};
+for (const post of publishedPosts) {
+	for (const tag of post.tags ?? []) {
+		tagCounts[tag] = (tagCounts[tag] ?? 0) + 1;
+	}
+}
+const tags = Object.keys(tagCounts)
+	.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
+	.map((name) => ({ name, count: tagCounts[name] }));
 const totalPosts = tags.reduce((sum, tag) => sum + tag.count, 0);
 const tagSummary = `${tags.length} ${i18n(I18nKey.tagsCount)} · ${totalPosts} ${i18n(I18nKey.postsCount)}`;
 ---

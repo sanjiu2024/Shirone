@@ -1,18 +1,58 @@
 ---
 import Pagination from "@components/molecules/Pagination.astro";
 import PostPage from "@components/organisms/PostPage.astro";
-import type { GetStaticPaths } from "astro";
+import type { Page } from "astro";
+import type { CollectionEntry } from "astro:content";
 import { postListConfig } from "@/config/postListConfig";
 import MainGridLayout from "../layouts/MainGridLayout.astro";
-import { getSortedPosts } from "../utils/content-utils";
+import { listPublished } from "../lib/posts.ts";
 
-export const getStaticPaths = (async ({ paginate }) => {
-	const allBlogPosts = await getSortedPosts();
-	return paginate(allBlogPosts, { pageSize: postListConfig.pageSize });
-}) satisfies GetStaticPaths;
-// https://github.com/withastro/astro/issues/6507#issuecomment-1489916992
-
-const { page } = Astro.props;
+const rawPage = Number(Astro.params.page ?? "1");
+const currentPage =
+	Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1;
+const pageSize = postListConfig.pageSize;
+const { posts, total } = await listPublished(currentPage, pageSize);
+const lastPage = Math.max(1, Math.ceil(total / pageSize));
+const entries = posts.map(
+	(post) =>
+		({
+			id: post.slug,
+			slug: post.slug,
+			collection: "posts",
+			data: {
+				title: post.title,
+				description: post.description ?? post.title,
+				tags: post.tags ?? [],
+				category: post.category,
+				published: new Date(post.created_at),
+				updated: new Date(post.updated_at),
+				pinned: Boolean(post.pinned),
+				image: post.cover ?? undefined,
+				draft: false,
+			},
+		}) as unknown as CollectionEntry<"posts">,
+);
+const page: Page = {
+	data: entries,
+	start: (currentPage - 1) * pageSize,
+	end: (currentPage - 1) * pageSize + entries.length,
+	total,
+	currentPage,
+	size: pageSize,
+	lastPage,
+	url: {
+		current: currentPage === 1 ? "/" : `/${currentPage}/`,
+		prev:
+			currentPage > 1
+				? currentPage - 1 === 1
+					? "/"
+					: `/${currentPage - 1}/`
+				: undefined,
+		next: currentPage < lastPage ? `/${currentPage + 1}/` : undefined,
+		first: "/",
+		last: lastPage === 1 ? "/" : `/${lastPage}/`,
+	},
+};
 
 const len = page.data.length;
 ---

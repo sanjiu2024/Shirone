@@ -3,9 +3,20 @@ import ArchivePanel from "@components/organisms/ArchivePanel.svelte";
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
-import { getSortedPostsList } from "../utils/content-utils";
+import { listPublished } from "../lib/posts.ts";
+import { getPostUrlBySlug } from "../utils/url-utils";
 
-const sortedPostsList = await getSortedPostsList();
+const { posts: publishedPosts } = await listPublished(1, 10000);
+const sortedPostsList = publishedPosts.map((post) => ({
+	slug: post.slug,
+	url: getPostUrlBySlug(post.slug),
+	data: {
+		title: post.title,
+		tags: post.tags ?? [],
+		category: post.category,
+		published: new Date(post.created_at),
+	},
+}));
 const archiveSummary = `${sortedPostsList.length} ${i18n(I18nKey.postsCount)}`;
 ---
 

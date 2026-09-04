@@ -11,9 +11,18 @@ import PageHeader from "@components/atoms/display/PageHeader.astro";
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
-import { getCategoryList } from "@utils/content-utils";
+import { getCategoryUrl } from "@utils/url-utils";
+import { listPublished } from "../lib/posts.ts";
 
-const categories = await getCategoryList();
+const { posts: publishedPosts } = await listPublished(1, 10000);
+const categoryCounts: Record<string, number> = {};
+for (const post of publishedPosts) {
+	const name = post.category?.trim() || i18n(I18nKey.uncategorized);
+	categoryCounts[name] = (categoryCounts[name] ?? 0) + 1;
+}
+const categories = Object.keys(categoryCounts)
+	.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
+	.map((name) => ({ name, count: categoryCounts[name], url: getCategoryUrl(name) }));
 const totalPosts = categories.reduce(
 	(sum, category) => sum + category.count,
 	0,
