@@ -1,6 +1,8 @@
 ---
 import AdminLayout from "../../layouts/AdminLayout.astro";
 import { getSessionUser } from "../../lib/auth.ts";
+import I18nKey from "../../i18n/i18nKey.ts";
+import { i18n } from "../../i18n/translation.ts";
 
 let user = null;
 try {
@@ -11,8 +13,8 @@ try {
 if (user?.role !== "admin") return Astro.redirect("/login");
 ---
 
-<AdminLayout title="Admin">
-	<h1 class="admin-title">Dashboard</h1>
+<AdminLayout title={i18n(I18nKey.adminDashboard)}>
+	<h1 class="admin-title">{i18n(I18nKey.adminDashboard)}</h1>
 	<nav class="admin-nav" aria-label="Admin sections">
 		<a href="/admin/posts">Posts</a>
 		<a href="/admin/comments">Comments</a>
