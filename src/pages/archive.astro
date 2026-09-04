@@ -3,10 +3,10 @@ import ArchivePanel from "@components/organisms/ArchivePanel.svelte";
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
-import { listPublished } from "../lib/posts.ts";
+import { listPublishedResilient } from "../lib/posts.ts";
 import { getPostUrlBySlug } from "../utils/url-utils";
 
-const { posts: publishedPosts } = await listPublished(1, 10000);
+const { posts: publishedPosts } = await listPublishedResilient(1, 10000);
 const sortedPostsList = publishedPosts.map((post) => ({
 	slug: post.slug,
 	url: getPostUrlBySlug(post.slug),

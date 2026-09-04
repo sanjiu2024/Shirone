@@ -130,3 +130,44 @@ export async function updatePost(
 		],
 	);
 }
+
+/**
+ * DB-first list with file fallback. When MySQL is unreachable (local dev
+ * without a database, or a DB outage) the homepage/archive/categories/tags
+ * render the theme's file-based posts instead of hard-500ing. Detail pages
+ * and writes still require the database.
+ */
+export async function listPublishedResilient(
+	page = 1,
+	pageSize = 10,
+): Promise<{ posts: PostRow[]; total: number }> {
+	try {
+		return await listPublished(page, pageSize);
+	} catch {
+		// Lazy import: content-utils pulls astro:content, which only
+		// resolves inside the Astro runtime (never under plain node tests).
+		const { getSortedPosts } = await import("../utils/content-utils.ts");
+		const { removeFileExtension } = await import("../utils/url-utils.ts");
+		const all = await getSortedPosts();
+		const total = all.length;
+		const start = (page - 1) * pageSize;
+		const posts: PostRow[] = all
+			.slice(start, start + pageSize)
+			.map((entry, index) => ({
+				id: start + index,
+				slug: removeFileExtension(entry.id),
+				title: entry.data.title,
+				description: entry.data.description ?? null,
+				cover: typeof entry.data.image === "string" ? entry.data.image : null,
+				category: entry.data.category ?? null,
+				tags: entry.data.tags ?? [],
+				content_md: "",
+				html_cache: null,
+				status: "published",
+				pinned: entry.data.pinned ? 1 : 0,
+				created_at: entry.data.published.toISOString(),
+				updated_at: (entry.data.updated ?? entry.data.published).toISOString(),
+			}));
+		return { posts, total };
+	}
+}
