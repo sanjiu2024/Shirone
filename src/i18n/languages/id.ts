@@ -157,6 +157,16 @@ export const id: Translation = {
 	[Key.commentsLoadFailed]: "Gagal memuat komentar",
 	[Key.commentsRequiresJavaScript]:
 		"Komentar memerlukan JavaScript untuk ditampilkan",
+	[Key.commentsUnavailable]: "Komentar tidak tersedia",
+	[Key.commentsPost]: "Kirim",
+	[Key.commentsDelete]: "Hapus",
+	[Key.commentsReply]: "Balas",
+	[Key.commentsEmpty]: "Belum ada komentar",
+	[Key.commentsSpam]: "Terlalu cepat, coba lagi nanti",
+	[Key.authLoginWithGithub]: "Masuk dengan GitHub",
+	[Key.authLogout]: "Keluar",
+	[Key.authHi]: "Halo",
+	[Key.adminDashboard]: "Dasbor admin",
 
 	[Key.untitled]: "Tanpa Judul",
 	[Key.uncategorized]: "Tanpa Kategori",

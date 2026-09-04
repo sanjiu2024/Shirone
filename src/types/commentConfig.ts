@@ -1,4 +1,4 @@
-export type CommentProvider = "none" | "twikoo";
+export type CommentProvider = "none" | "twikoo" | "github-db";
 
 export interface TwikooConfig {
 	/** Twikoo 环境 ID 或后端服务地址 URL */

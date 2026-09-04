@@ -16,7 +16,7 @@ import { withUserConfig } from "../utils/config-overlay.ts";
 export const commentConfig: CommentConfig = withUserConfig("comment", {
 	/** 全局评论总开关：false 时完全不加载评论脚本与 DOM */
 	enable: false,
-	/** 评论提供商类型："none" | "twikoo" */
+	/** 评论提供商类型："none" | "twikoo" | "github-db" */
 	provider: "none",
 	/** 是否开启视口懒加载：滚动进入视口才动态加载评论组件（推荐 true） */
 	lazy: true,
@@ -33,11 +33,17 @@ export const commentConfig: CommentConfig = withUserConfig("comment", {
 	},
 });
 
-export type ResolvedCommentOptions = {
-	provider: "twikoo";
-	lazy: boolean;
-	twikoo: TwikooConfig;
-} | null;
+export type ResolvedCommentOptions =
+	| {
+			provider: "twikoo";
+			lazy: boolean;
+			twikoo: TwikooConfig;
+	  }
+	| {
+			provider: "github-db";
+			lazy: boolean;
+	  }
+	| null;
 
 /**
  * 解析并校验评论配置。未启用、提供商为 none 或关键参数缺失时返回 null。
@@ -63,6 +69,9 @@ export function resolveCommentOptions(
 				scriptUrl,
 			},
 		};
+	}
+	if (config.provider === "github-db") {
+		return { provider: "github-db", lazy: config.lazy };
 	}
 	return null;
 }

@@ -146,6 +146,16 @@ export const th: Translation = {
 	[Key.commentsLoadFailed]: "โหลดความคิดเห็นไม่สำเร็จ",
 	[Key.commentsRequiresJavaScript]:
 		"ความคิดเห็นจำเป็นต้องเปิดใช้งาน JavaScript เพื่อแสดงผล",
+	[Key.commentsUnavailable]: "ความคิดเห็นไม่พร้อมใช้งาน",
+	[Key.commentsPost]: "โพสต์",
+	[Key.commentsDelete]: "ลบ",
+	[Key.commentsReply]: "ตอบกลับ",
+	[Key.commentsEmpty]: "ยังไม่มีความคิดเห็น",
+	[Key.commentsSpam]: "เร็วเกินไป โปรดลองอีกครั้งภายหลัง",
+	[Key.authLoginWithGithub]: "เข้าสู่ระบบด้วย GitHub",
+	[Key.authLogout]: "ออกจากระบบ",
+	[Key.authHi]: "สวัสดี",
+	[Key.adminDashboard]: "แดชบอร์ดผู้ดูแล",
 
 	[Key.untitled]: "ไม่ได้ตั้งชื่อ",
 	[Key.uncategorized]: "ไม่ได้จัดหมวดหมู่",

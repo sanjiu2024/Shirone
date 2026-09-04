@@ -154,6 +154,16 @@ export const ja: Translation = {
 	[Key.commentsLoadFailed]: "コメントの読み込みに失敗しました",
 	[Key.commentsRequiresJavaScript]:
 		"コメントを表示するには JavaScript を有効にしてください",
+	[Key.commentsUnavailable]: "コメントを利用できません",
+	[Key.commentsPost]: "投稿",
+	[Key.commentsDelete]: "削除",
+	[Key.commentsReply]: "返信",
+	[Key.commentsEmpty]: "コメントはまだありません",
+	[Key.commentsSpam]: "少し待ってから再試行してください",
+	[Key.authLoginWithGithub]: "GitHubでログイン",
+	[Key.authLogout]: "ログアウト",
+	[Key.authHi]: "こんにちは",
+	[Key.adminDashboard]: "管理ダッシュボード",
 
 	[Key.untitled]: "タイトルなし",
 	[Key.uncategorized]: "カテゴリなし",

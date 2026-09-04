@@ -155,6 +155,16 @@ export const en: Translation = {
 	[Key.commentsLoadFailed]: "Failed to load comments.",
 	[Key.commentsRequiresJavaScript]:
 		"Comments require JavaScript to be displayed.",
+	[Key.commentsUnavailable]: "Comments unavailable",
+	[Key.commentsPost]: "Post",
+	[Key.commentsDelete]: "Delete",
+	[Key.commentsReply]: "Reply",
+	[Key.commentsEmpty]: "No comments yet",
+	[Key.commentsSpam]: "Slow down, retry later",
+	[Key.authLoginWithGithub]: "Sign in with GitHub",
+	[Key.authLogout]: "Sign out",
+	[Key.authHi]: "Hi",
+	[Key.adminDashboard]: "Admin dashboard",
 
 	[Key.untitled]: "Untitled",
 	[Key.uncategorized]: "Uncategorized",

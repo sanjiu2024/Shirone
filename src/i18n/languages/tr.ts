@@ -156,6 +156,16 @@ export const tr: Translation = {
 	[Key.commentsLoadFailed]: "Yorumlar yüklenemedi",
 	[Key.commentsRequiresJavaScript]:
 		"Yorumların gösterilmesi için JavaScript etkinleştirilmelidir",
+	[Key.commentsUnavailable]: "Yorumlar kullanılamıyor",
+	[Key.commentsPost]: "Gönder",
+	[Key.commentsDelete]: "Sil",
+	[Key.commentsReply]: "Yanıtla",
+	[Key.commentsEmpty]: "Henüz yorum yok",
+	[Key.commentsSpam]: "Çok hızlı, daha sonra tekrar dene",
+	[Key.authLoginWithGithub]: "GitHub ile giriş yap",
+	[Key.authLogout]: "Çıkış yap",
+	[Key.authHi]: "Merhaba",
+	[Key.adminDashboard]: "Yönetim paneli",
 
 	[Key.untitled]: "Başlıksız",
 	[Key.uncategorized]: "Katagorisiz",

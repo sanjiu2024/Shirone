@@ -156,6 +156,16 @@ export const es: Translation = {
 	[Key.commentsLoadFailed]: "Error al cargar comentarios",
 	[Key.commentsRequiresJavaScript]:
 		"Los comentarios requieren JavaScript para mostrarse",
+	[Key.commentsUnavailable]: "Comentarios no disponibles",
+	[Key.commentsPost]: "Publicar",
+	[Key.commentsDelete]: "Eliminar",
+	[Key.commentsReply]: "Responder",
+	[Key.commentsEmpty]: "Aún no hay comentarios",
+	[Key.commentsSpam]: "Demasiado rápido, inténtalo más tarde",
+	[Key.authLoginWithGithub]: "Iniciar sesión con GitHub",
+	[Key.authLogout]: "Cerrar sesión",
+	[Key.authHi]: "Hola",
+	[Key.adminDashboard]: "Panel de administración",
 
 	[Key.untitled]: "Sin título",
 	[Key.uncategorized]: "Sin categoría",

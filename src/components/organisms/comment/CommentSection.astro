@@ -9,15 +9,57 @@ import type { CommentContext } from "@/types/commentConfig";
 interface Props {
 	context: CommentContext;
 	postCommentEnabled?: boolean;
+	postId?: number;
 	class?: string;
 }
 
-const { context, postCommentEnabled = true, class: className } = Astro.props;
+const {
+	context,
+	postCommentEnabled = true,
+	postId,
+	class: className,
+} = Astro.props;
 const options = resolveCommentOptions(commentConfig);
 
 if (!options || !postCommentEnabled) {
 	return null;
 }
+
+const isGithubDb = options.provider === "github-db";
+
+// Resolve the numeric post id server-side without touching the caller:
+// an explicit postId prop wins, otherwise derive the slug from the
+// stable `post:<slug>` context key. Only queried for github-db so the
+// disabled/twikoo paths keep zero extra cost.
+let githubDbPostId: number | null = postId ?? null;
+let githubDbSlug = "";
+if (isGithubDb) {
+	if (context.key.startsWith("post:")) {
+		githubDbSlug = context.key.slice("post:".length);
+	}
+	if (githubDbPostId === null && githubDbSlug) {
+		try {
+			const { getPublishedBySlug } = await import("../../../lib/posts.ts");
+			githubDbPostId = (await getPublishedBySlug(githubDbSlug))?.id ?? null;
+		} catch {
+			githubDbPostId = null;
+		}
+	}
+	if (githubDbPostId === null) {
+		return null;
+	}
+}
+
+const GithubLoginButton =
+	isGithubDb && githubDbPostId !== null
+		? (await import("@components/organisms/auth/GithubLoginButton.svelte"))
+				.default
+		: null;
+const CommentIsland =
+	isGithubDb && githubDbPostId !== null
+		? (await import("@components/organisms/comment/CommentIsland.svelte"))
+				.default
+		: null;
 
 const Twikoo =
 	options.provider === "twikoo"
@@ -45,6 +87,18 @@ const Twikoo =
 				config={options.twikoo}
 				lazy={options.lazy}
 			/>
+		)}
+
+		{options.provider === "github-db" && GithubLoginButton && CommentIsland && githubDbPostId !== null && (
+			<>
+				<GithubLoginButton client:load />
+				<CommentIsland
+					client:visible
+					postId={githubDbPostId}
+					slug={githubDbSlug}
+					enabled={true}
+				/>
+			</>
 		)}
 	</Card>
 </section>

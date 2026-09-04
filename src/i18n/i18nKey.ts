@@ -143,6 +143,17 @@ enum I18nKey {
 	commentsLoading = "commentsLoading",
 	commentsLoadFailed = "commentsLoadFailed",
 	commentsRequiresJavaScript = "commentsRequiresJavaScript",
+	commentsUnavailable = "commentsUnavailable",
+	commentsPost = "commentsPost",
+	commentsDelete = "commentsDelete",
+	commentsReply = "commentsReply",
+	commentsEmpty = "commentsEmpty",
+	commentsSpam = "commentsSpam",
+
+	authLoginWithGithub = "authLoginWithGithub",
+	authLogout = "authLogout",
+	authHi = "authHi",
+	adminDashboard = "adminDashboard",
 
 	untitled = "untitled",
 	uncategorized = "uncategorized",

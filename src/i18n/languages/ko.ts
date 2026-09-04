@@ -153,6 +153,16 @@ export const ko: Translation = {
 	[Key.commentsLoadFailed]: "댓글을 불러오지 못했습니다",
 	[Key.commentsRequiresJavaScript]:
 		"댓글을 표시하려면 JavaScript를 활성화해야 합니다",
+	[Key.commentsUnavailable]: "댓글을 사용할 수 없습니다",
+	[Key.commentsPost]: "게시",
+	[Key.commentsDelete]: "삭제",
+	[Key.commentsReply]: "답글",
+	[Key.commentsEmpty]: "아직 댓글이 없습니다",
+	[Key.commentsSpam]: "잠시 후 다시 시도해 주세요",
+	[Key.authLoginWithGithub]: "GitHub로 로그인",
+	[Key.authLogout]: "로그아웃",
+	[Key.authHi]: "안녕하세요",
+	[Key.adminDashboard]: "관리 대시보드",
 
 	[Key.untitled]: "제목 없음",
 	[Key.uncategorized]: "분류되지 않음",
