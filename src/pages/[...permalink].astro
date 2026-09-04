@@ -103,6 +103,7 @@ async function buildListRoute(pageNum: number): Promise<ListRoute> {
 		const start = (currentPage - 1) * pageSize;
 		entries = all.slice(start, start + pageSize);
 	}
+	const lastPage = Math.max(1, Math.ceil(total / pageSize));
 	const page: Page = {
 		data: entries,
 		start: (currentPage - 1) * pageSize,
