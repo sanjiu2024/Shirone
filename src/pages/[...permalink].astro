@@ -36,6 +36,7 @@ import {
 	umamiConfig,
 } from "@/config";
 import { getPublishedBySlug, listPublished, renderMarkdownToHtml } from "../lib/posts.ts";
+import { getSortedPosts } from "../utils/content-utils.ts";
 import type { PostRow } from "../lib/posts.ts";
 
 // Universal SSR resolver (single rest route — [...page].astro was removed to
@@ -69,27 +70,39 @@ let route: PostRoute | ListRoute | { kind: "missing" };
 async function buildListRoute(pageNum: number): Promise<ListRoute> {
 	const currentPage = Number.isFinite(pageNum) && pageNum > 0 ? Math.floor(pageNum) : 1;
 	const pageSize = postListConfig.pageSize;
-	const { posts, total } = await listPublished(currentPage, pageSize);
-	const lastPage = Math.max(1, Math.ceil(total / pageSize));
-	const entries = posts.map(
-		(post) =>
-			({
-				id: post.slug,
-				slug: post.slug,
-				collection: "posts",
-				data: {
-					title: post.title,
-					description: post.description ?? post.title,
-					tags: post.tags ?? [],
-					category: post.category,
-					published: new Date(post.created_at),
-					updated: new Date(post.updated_at),
-					pinned: Boolean(post.pinned),
-					image: post.cover ?? undefined,
-					draft: false,
-				},
-			}) as unknown as CollectionEntry<"posts">,
-	);
+	// DB first; fall back to file-based theme posts when MySQL is
+	// unreachable (local dev without a database, or a DB outage) so the
+	// homepage never hard-500s. Comments still degrade separately.
+	let entries: CollectionEntry<"posts">[];
+	let total: number;
+	try {
+		const { posts, total: dbTotal } = await listPublished(currentPage, pageSize);
+		total = dbTotal;
+		entries = posts.map(
+			(post) =>
+				({
+					id: post.slug,
+					slug: post.slug,
+					collection: "posts",
+					data: {
+						title: post.title,
+						description: post.description ?? post.title,
+						tags: post.tags ?? [],
+						category: post.category,
+						published: new Date(post.created_at),
+						updated: new Date(post.updated_at),
+						pinned: Boolean(post.pinned),
+						image: post.cover ?? undefined,
+						draft: false,
+					},
+				}) as unknown as CollectionEntry<"posts">,
+		);
+	} catch {
+		const all = await getSortedPosts();
+		total = all.length;
+		const start = (currentPage - 1) * pageSize;
+		entries = all.slice(start, start + pageSize);
+	}
 	const page: Page = {
 		data: entries,
 		start: (currentPage - 1) * pageSize,
