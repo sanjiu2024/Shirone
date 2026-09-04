@@ -7,10 +7,12 @@ import ImageWrapper from "@components/molecules/ImageWrapper.astro";
 import LastUpdatedNotice from "@components/molecules/LastUpdatedNotice.astro";
 import License from "@components/molecules/License.astro";
 import PostMetadata from "@components/molecules/PostMeta.astro";
+import Pagination from "@components/molecules/Pagination.astro";
 import ArticleDiscovery from "@components/organisms/ArticleDiscovery.astro";
 import ArticleShare from "@components/organisms/ArticleShare.svelte";
 import CommentSection from "@components/organisms/comment/CommentSection.astro";
 import UmamiStats from "@components/organisms/UmamiStats.astro";
+import PostPage from "@components/organisms/PostPage.astro";
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
@@ -18,10 +20,13 @@ import { resolveAsset } from "@utils/asset-utils";
 import { formatDateToYYYYMMDD } from "@utils/date-utils";
 import { getPostUrlBySlug } from "@utils/url-utils";
 import { Icon } from "astro-icon/components";
+import type { Page } from "astro";
+import type { CollectionEntry } from "astro:content";
 import {
 	articleConfig,
 	commentConfig,
 	licenseConfig,
+	postListConfig,
 	profileConfig,
 	resolveArticleShareOptions,
 	resolveCommentOptions,
@@ -30,47 +35,146 @@ import {
 	siteConfig,
 	umamiConfig,
 } from "@/config";
-import { getPublishedBySlug, renderMarkdownToHtml } from "../lib/posts.ts";
+import { getPublishedBySlug, listPublished, renderMarkdownToHtml } from "../lib/posts.ts";
+import type { PostRow } from "../lib/posts.ts";
 
-const slug = Astro.params.permalink ?? "";
-const post = await getPublishedBySlug(slug);
-if (!post) return new Response("Not Found", { status: 404 });
+// Universal SSR resolver (single rest route — [...page].astro was removed to
+// end the route collision). Post lookup wins over numeric pagination so a
+// numeric slug still renders its post; "/" and "/N/" render the list.
+const raw = Astro.params.permalink ?? "";
 
-const tags = post.tags ?? [];
-const published = new Date(post.created_at);
-const updated = new Date(post.updated_at);
-const description = post.description ?? post.title;
-const canonicalPostUrl = getPostUrlBySlug(post.slug);
-const words = post.content_md.length;
-const minutes = Math.max(1, Math.ceil(words / 400));
-const html = post.html_cache ?? (await renderMarkdownToHtml(post.content_md));
-const postCommentEnabled = Boolean(resolveCommentOptions(commentConfig));
-const lastUpdatedNotice = resolveLastUpdatedNoticeOptions(articleConfig);
-const shareOptions = resolveArticleShareOptions(articleConfig);
-const umamiEnabled = resolveUmamiOptions(umamiConfig) !== null;
-const authorAvatarUrl = shareOptions
-	? await resolveAsset(profileConfig.avatar ?? "")
-	: "";
-
-const jsonLd = {
-	"@context": "https://schema.org",
-	"@type": "BlogPosting",
-	headline: post.title,
-	description,
-	keywords: tags,
-	author: {
-		"@type": "Person",
-		name: profileConfig.name,
-		url: Astro.site,
-	},
-	datePublished: published.toISOString(),
-	dateModified: updated.toISOString(),
-	inLanguage: siteConfig.lang.replace("_", "-"),
+type PostRoute = {
+	kind: "post";
+	post: PostRow;
+	tags: string[];
+	published: Date;
+	updated: Date;
+	description: string;
+	canonicalPostUrl: string;
+	words: number;
+	minutes: number;
+	html: string;
+	postCommentEnabled: boolean;
+	lastUpdatedNotice: ReturnType<typeof resolveLastUpdatedNoticeOptions>;
+	shareOptions: ReturnType<typeof resolveArticleShareOptions>;
+	umamiEnabled: boolean;
+	authorAvatarUrl: string;
+	jsonLd: Record<string, unknown>;
 };
+
+type ListRoute = { kind: "list"; page: Page; len: number };
+
+let route: PostRoute | ListRoute | { kind: "missing" };
+
+async function buildListRoute(pageNum: number): Promise<ListRoute> {
+	const currentPage = Number.isFinite(pageNum) && pageNum > 0 ? Math.floor(pageNum) : 1;
+	const pageSize = postListConfig.pageSize;
+	const { posts, total } = await listPublished(currentPage, pageSize);
+	const lastPage = Math.max(1, Math.ceil(total / pageSize));
+	const entries = posts.map(
+		(post) =>
+			({
+				id: post.slug,
+				slug: post.slug,
+				collection: "posts",
+				data: {
+					title: post.title,
+					description: post.description ?? post.title,
+					tags: post.tags ?? [],
+					category: post.category,
+					published: new Date(post.created_at),
+					updated: new Date(post.updated_at),
+					pinned: Boolean(post.pinned),
+					image: post.cover ?? undefined,
+					draft: false,
+				},
+			}) as unknown as CollectionEntry<"posts">,
+	);
+	const page: Page = {
+		data: entries,
+		start: (currentPage - 1) * pageSize,
+		end: (currentPage - 1) * pageSize + entries.length,
+		total,
+		currentPage,
+		size: pageSize,
+		lastPage,
+		url: {
+			current: currentPage === 1 ? "/" : `/${currentPage}/`,
+			prev:
+				currentPage > 1
+					? currentPage - 1 === 1
+						? "/"
+						: `/${currentPage - 1}/`
+					: undefined,
+			next: currentPage < lastPage ? `/${currentPage + 1}/` : undefined,
+			first: "/",
+			last: lastPage === 1 ? "/" : `/${lastPage}/`,
+		},
+	};
+	return { kind: "list", page, len: entries.length };
+}
+
+if (raw === "") {
+	route = await buildListRoute(1);
+} else if (raw.includes("/")) {
+	route = { kind: "missing" };
+} else {
+	const post = await getPublishedBySlug(raw);
+	if (post) {
+		const tags = post.tags ?? [];
+		const published = new Date(post.created_at);
+		const updated = new Date(post.updated_at);
+		const description = post.description ?? post.title;
+		const canonicalPostUrl = getPostUrlBySlug(post.slug);
+		const words = post.content_md.length;
+		const minutes = Math.max(1, Math.ceil(words / 400));
+		const html = post.html_cache ?? (await renderMarkdownToHtml(post.content_md));
+		const postCommentEnabled = Boolean(resolveCommentOptions(commentConfig));
+		const lastUpdatedNotice = resolveLastUpdatedNoticeOptions(articleConfig);
+		const shareOptions = resolveArticleShareOptions(articleConfig);
+		const umamiEnabled = resolveUmamiOptions(umamiConfig) !== null;
+		const authorAvatarUrl = shareOptions ? await resolveAsset(profileConfig.avatar ?? "") : "";
+		route = {
+			kind: "post",
+			post,
+			tags,
+			published,
+			updated,
+			description,
+			canonicalPostUrl,
+			words,
+			minutes,
+			html,
+			postCommentEnabled,
+			lastUpdatedNotice,
+			shareOptions,
+			umamiEnabled,
+			authorAvatarUrl,
+			jsonLd: {
+				"@context": "https://schema.org",
+				"@type": "BlogPosting",
+				headline: post.title,
+				description,
+				keywords: tags,
+				author: { "@type": "Person", name: profileConfig.name, url: Astro.site },
+				datePublished: published.toISOString(),
+				dateModified: updated.toISOString(),
+				inLanguage: siteConfig.lang.replace("_", "-"),
+			},
+		};
+	} else if (/^\d+$/.test(raw)) {
+		route = await buildListRoute(Number(raw));
+	} else {
+		route = { kind: "missing" };
+	}
+}
+
+if (route.kind === "missing") return new Response("Not Found", { status: 404 });
 ---
 
-<MainGridLayout banner={post.cover ?? undefined} title={post.title} description={description} bannerDate={formatDateToYYYYMMDD(published)} lang={siteConfig.lang} setOGTypeArticle={true} headings={[]} postCategory={post.category || undefined} page="post" hasComments={postCommentEnabled}>
-    <script is:inline slot="head" type="application/ld+json" set:html={JSON.stringify(jsonLd)}></script>
+{route.kind === "post" ? (
+<MainGridLayout banner={route.post.cover ?? undefined} title={route.post.title} description={route.description} bannerDate={formatDateToYYYYMMDD(route.published)} lang={siteConfig.lang} setOGTypeArticle={true} headings={[]} postCategory={route.post.category || undefined} page="post" hasComments={route.postCommentEnabled}>
+    <script is:inline slot="head" type="application/ld+json" set:html={JSON.stringify(route.jsonLd)}></script>
     <div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative mb-4">
 		<Card color="var(--card-bg)" radius="l" class="post-card z-10 px-6 md:px-9 pt-6 pb-4 relative w-full">
 			<!-- word count and reading time -->
@@ -79,17 +183,17 @@ const jsonLd = {
 					<div class="transition h-6 w-6 rounded-md bg-[var(--surface-container-high)] text-[var(--on-surface-variant)] flex items-center justify-center mr-2">
 						<Icon name="material-symbols:notes-rounded"></Icon>
 					</div>
-					<div class="text-sm">{words} {" " + i18n(words === 1 ? I18nKey.wordCount : I18nKey.wordsCount)}</div>
+					<div class="text-sm">{route.words} {" " + i18n(route.words === 1 ? I18nKey.wordCount : I18nKey.wordsCount)}</div>
 				</div>
 				<div class="flex flex-row items-center">
 					<div class="transition h-6 w-6 rounded-md bg-[var(--surface-container-high)] text-[var(--on-surface-variant)] flex items-center justify-center mr-2">
 						<Icon name="material-symbols:schedule-outline-rounded"></Icon>
 					</div>
-					<div class="text-sm">{minutes} {" " + i18n(minutes === 1 ? I18nKey.minuteCount : I18nKey.minutesCount)}</div>
+					<div class="text-sm">{route.minutes} {" " + i18n(route.minutes === 1 ? I18nKey.minuteCount : I18nKey.minutesCount)}</div>
 				</div>
-				{umamiEnabled && (
+				{route.umamiEnabled && (
 					<div class="flex flex-row items-center">
-						<UmamiStats variant="meta" path={canonicalPostUrl} />
+						<UmamiStats variant="meta" path={route.canonicalPostUrl} />
 					</div>
 				)}
 			</div>
@@ -105,7 +209,7 @@ const jsonLd = {
 				>
 					<AccentBar size="large" />
 					<div class="inline-block">
-						{post.title}
+						{route.post.title}
 					</div>
 					<IconButton
 						id="copy-post-link"
@@ -121,20 +225,20 @@ const jsonLd = {
 			<div class="onload-animation">
 				<PostMetadata
 					class="mb-5"
-					published={published}
-					updated={updated}
-					tags={tags}
-					category={post.category}
+					published={route.published}
+					updated={route.updated}
+					tags={route.tags}
+					category={route.post.category}
 				></PostMetadata>
-				{!post.cover && <div class="border-[var(--line-divider)] border-dashed border-b-[1px] mb-5"></div>}
+				{!route.post.cover && <div class="border-[var(--line-divider)] border-dashed border-b-[1px] mb-5"></div>}
 			</div>
 
             <!-- always show cover as long as it has one -->
 
-			{post.cover &&
+			{route.post.cover &&
 				<ImageWrapper
 					id="post-cover"
-					src={post.cover}
+					src={route.post.cover}
 					class="mb-8 rounded-xl banner-container onload-animation"
 					loading="eager"
 					fetchPriority="high"
@@ -146,23 +250,23 @@ const jsonLd = {
 			}
 
             <Markdown class="mb-6 onload-animation">
-                <Fragment set:html={html} />
+                <Fragment set:html={route.html} />
             </Markdown>
 
-			{licenseConfig.enable && <License title={post.title} slug={post.slug} pubDate={published} class="mb-6 rounded-xl license-container onload-animation"></License>}
+			{licenseConfig.enable && <License title={route.post.title} slug={route.post.slug} pubDate={route.published} class="mb-6 rounded-xl license-container onload-animation"></License>}
 
-			{shareOptions && (
+			{route.shareOptions && (
 				<ArticleShare
 					client:visible
-					options={shareOptions}
-					title={post.title}
-					description={description}
+					options={route.shareOptions}
+					title={route.post.title}
+					description={route.description}
 					author={profileConfig.name}
-					published={formatDateToYYYYMMDD(published)}
+					published={formatDateToYYYYMMDD(route.published)}
 					siteTitle={siteConfig.title}
-					postPath={canonicalPostUrl}
-					coverSelector={post.cover ? "#post-cover img" : undefined}
-					avatarUrl={authorAvatarUrl}
+					postPath={route.canonicalPostUrl}
+					coverSelector={route.post.cover ? "#post-cover img" : undefined}
+					avatarUrl={route.authorAvatarUrl}
 					class="mb-6 rounded-xl onload-animation"
 				/>
 			)}
@@ -178,19 +282,19 @@ const jsonLd = {
 
     <CommentSection
         context={{
-            key: `post:${post.slug}`,
-            path: canonicalPostUrl,
-            title: post.title,
+            key: `post:${route.post.slug}`,
+            path: route.canonicalPostUrl,
+            title: route.post.title,
             language: siteConfig.lang,
         }}
-        postCommentEnabled={postCommentEnabled}
+        postCommentEnabled={route.postCommentEnabled}
         class="onload-animation"
     />
 
-    {lastUpdatedNotice && (
+    {route.lastUpdatedNotice && (
         <LastUpdatedNotice
-            date={updated}
-            minimumAgeDays={lastUpdatedNotice.minimumAgeDays}
+            date={route.updated}
+            minimumAgeDays={route.lastUpdatedNotice.minimumAgeDays}
             class="mb-4 onload-animation"
         />
     )}
@@ -201,6 +305,12 @@ const jsonLd = {
     </div>
 
 </MainGridLayout>
+) : (
+<MainGridLayout page="home">
+    <PostPage page={route.page}></PostPage>
+    <Pagination class="mx-auto onload-animation" page={route.page} style={`animation-delay: calc(var(--content-delay) + ${(route.len)*50}ms)`}></Pagination>
+</MainGridLayout>
+)}
 
 <style is:global lang="stylus">
 	/* ???/????? hover ????????????????????
